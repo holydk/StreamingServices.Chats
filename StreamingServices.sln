@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.27130.2026
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StreamingServices.Test", "StreamingServices.Test\StreamingServices.Test.csproj", "{51FE70E6-526C-424D-9513-4C569D7E15E7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StreamingServices", "StreamingServices\StreamingServices.csproj", "{1A65F26B-92A3-4EBD-A04A-DC421BEA088C}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{51FE70E6-526C-424D-9513-4C569D7E15E7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{51FE70E6-526C-424D-9513-4C569D7E15E7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{51FE70E6-526C-424D-9513-4C569D7E15E7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{51FE70E6-526C-424D-9513-4C569D7E15E7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1A65F26B-92A3-4EBD-A04A-DC421BEA088C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1A65F26B-92A3-4EBD-A04A-DC421BEA088C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1A65F26B-92A3-4EBD-A04A-DC421BEA088C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1A65F26B-92A3-4EBD-A04A-DC421BEA088C}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {CFD403DC-05BD-4615-B641-59E068AAFAC9}
+	EndGlobalSection
+EndGlobal
