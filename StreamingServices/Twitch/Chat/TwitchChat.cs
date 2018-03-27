@@ -299,8 +299,6 @@ namespace StreamingServices.Twitch.Chat
                     default:
                         break;
                 }
-
-                System.Console.WriteLine(match.Groups["Command"].Value);
             }
         }
 
