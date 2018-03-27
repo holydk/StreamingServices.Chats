@@ -1,18 +1,16 @@
-﻿using StreamingServices.GoodGame.Models;
-using System.Runtime.Serialization;
+using Newtonsoft.Json;
+using StreamingServices.GoodGame.Models;
 
 namespace StreamingServices.GoodGame.Chat.Models
 {
-    [DataContract]
     public class ResGGWelcome : GGMessage<ResGGWelcome.DataContainer>
     {
-        [DataContract]
         public class DataContainer
         {
-            [DataMember(Name = "protocolVersion")]
+            [JsonProperty(PropertyName = "protocolVersion")]
             public float ProtocolVersion { get; set; }
 
-            [DataMember(Name = "serverIdent")]
+            [JsonProperty(PropertyName = "serverIdent")]
             public string ServerIdent { get; set; }
         }
     }
