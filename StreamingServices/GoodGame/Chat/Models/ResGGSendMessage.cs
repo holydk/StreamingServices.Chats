@@ -1,39 +1,37 @@
-﻿using StreamingServices.GoodGame.Models;
-using System.Runtime.Serialization;
+using Newtonsoft.Json;
+using StreamingServices.GoodGame.Models;
 
 namespace StreamingServices.GoodGame.Chat.Models
 {
-    [DataContract]
     public class ResGGSendMessage : GGMessage<ResGGSendMessage.DataContainer>
     {
-        [DataContract]
         public class DataContainer
         {
-            [DataMember(Name = "channel_id")]
+            [JsonProperty(PropertyName = "channel_id")]
             public int ChannelId { get; set; }
 
-            [DataMember(Name = "user_id")]
+            [JsonProperty(PropertyName = "user_id")]
             public int UserId { get; set; }
 
-            [DataMember(Name = "user_name")]
+            [JsonProperty(PropertyName = "user_name")]
             public string UserName { get; set; }
 
-            [DataMember(Name = "message_id")]
-            public int MessageId { get; set; }
+            [JsonProperty(PropertyName = "message_id")]
+            public decimal MessageId { get; set; }
 
-            [DataMember(Name = "timestamp")]
+            [JsonProperty(PropertyName = "timestamp")]
             public int Timestamp { get; set; }
 
-            [DataMember(Name = "text")]
+            [JsonProperty(PropertyName = "text")]
             public string Text { get; set; }
 
-            [DataMember(Name = "hideIcon")]
+            [JsonProperty(PropertyName = "hideIcon")]
             public bool HideIcon { get; set; }
 
-            [DataMember(Name = "mobile")]
+            [JsonProperty(PropertyName = "mobile")]
             public bool Mobile { get; set; }
 
-            [DataMember(Name = "color")]
+            [JsonProperty(PropertyName = "color")]
             public string Color { get; set; }
         }
 
