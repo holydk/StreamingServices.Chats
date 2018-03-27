@@ -1,17 +1,16 @@
-﻿using System.Runtime.Serialization;
+using Newtonsoft.Json;
 
 namespace StreamingServices.GoodGame.Models
 {
-    [DataContract]
-    public class GGMessage<T>
+    public class GGMessage<T> 
         where T : class, new()
     {
+        [JsonProperty(PropertyName = "data")]
+        public T Data { get; set; }
+
         public GGMessage()
         {
             Data = new T();
         }
-
-        [DataMember(Name = "data")]
-        public T Data { get; set; }
     }
 }

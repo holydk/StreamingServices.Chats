@@ -1,42 +1,39 @@
-﻿using StreamingServices.GoodGame.Models;
-using System.Runtime.Serialization;
+using Newtonsoft.Json;
+using StreamingServices.GoodGame.Models;
 
 namespace StreamingServices.GoodGame.Chat.Models
 {
-    [DataContract]
     public class ResGGChannelHistory : GGMessage<ResGGChannelHistory.DataContainer>
     {
-        [DataContract]
         public class DataContainer
         {
-            [DataMember(Name = "channel_id")]
+            [JsonProperty(PropertyName = "channel_id")]
             public int ChannelId { get; set; }
 
-            [DataMember(Name = "messages")]
+            [JsonProperty(PropertyName = "messages")]
             public Message[] Messages { get; set; }
 
-            [DataContract]
             public class Message
             {
-                [DataMember(Name = "user_id")]
+                [JsonProperty(PropertyName = "user_id")]
                 public int UserId { get; set; }
 
-                [DataMember(Name = "user_name")]
+                [JsonProperty(PropertyName = "user_name")]
                 public string UserName { get; set; }
 
-                [DataMember(Name = "user_rights")]
+                [JsonProperty(PropertyName = "user_rights")]
                 public int UserRights { get; set; }
 
-                [DataMember(Name = "user_groups")]
+                [JsonProperty(PropertyName = "user_groups")]
                 public object[] UserGroups { get; set; }
 
-                [DataMember(Name = "message_id")]
+                [JsonProperty(PropertyName = "message_id")]
                 public int MessageId { get; set; }
 
-                [DataMember(Name = "timestamp")]
+                [JsonProperty(PropertyName = "timestamp")]
                 public int Timestamp { get; set; }
 
-                [DataMember(Name = "text")]
+                [JsonProperty(PropertyName = "text")]
                 public string Text { get; set; }
 
                 public override string ToString()

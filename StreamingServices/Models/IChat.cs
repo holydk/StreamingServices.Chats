@@ -1,15 +1,15 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 
 namespace StreamingServices.Models
 {
     public interface IChat
     {
-        string UserName { get; }
-
         bool IsJoined { get; }
 
         bool IsAuthorized { get; }
+
+        string UserName { get; }
 
         Channel Channel { get; }
 
@@ -21,8 +21,10 @@ namespace StreamingServices.Models
 
         event EventHandler<ChatMessageEventArgs> Message;
 
-        Task SendMessageAsync(string text);
+        Task ConnectAsync();
 
         Task AuthAsync();
+
+        Task SendMessageAsync(string text);
     }
 }

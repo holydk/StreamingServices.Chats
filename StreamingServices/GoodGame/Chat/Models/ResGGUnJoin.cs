@@ -1,5 +1,5 @@
-﻿using StreamingServices.GoodGame.Models;
-using System.Runtime.Serialization;
+using Newtonsoft.Json;
+using StreamingServices.GoodGame.Models;
 
 namespace StreamingServices.GoodGame.Chat.Models
 {
@@ -7,7 +7,7 @@ namespace StreamingServices.GoodGame.Chat.Models
     {
         public class DataContainer
         {
-            [DataMember(Name = "channel_id")]
+            [JsonProperty(PropertyName = "channel_id")]
             public int ChannelId { get; set; }
         }
     }

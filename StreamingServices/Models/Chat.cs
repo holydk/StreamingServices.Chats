@@ -1,17 +1,17 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 
 namespace StreamingServices.Models
 {
     /// <summary>
-    /// Base class for Chats on Socket
+    /// Base class for Chat
     /// </summary>
     /// <typeparam name="TCommandType"></typeparam>
     public abstract class Chat<TCommandType> : ClientWebService<TCommandType>, IChat
         where TCommandType : struct, IConvertible
     {
-        public Chat(string url)
-            : base(url)
+        public Chat(string uriString)
+            : base(uriString)
         { }
 
         /// <summary>
@@ -45,32 +45,34 @@ namespace StreamingServices.Models
         public event EventHandler<ChatMessageEventArgs> Message;
 
         /// <summary>
+        /// Connect to chat server
+        /// </summary>
+        /// <returns></returns>
+        public abstract Task ConnectAsync();
+
+        /// <summary>
+        /// Authorize into chat
+        /// </summary>
+        /// <returns></returns>
+        public abstract Task AuthAsync();
+
+        /// <summary>
         /// Send message in chat
         /// </summary>
         /// <param name="text">text</param>
         /// <returns></returns>
         public abstract Task SendMessageAsync(string text);
 
-        public abstract Task AuthAsync();
-
-        protected virtual void OnError(ChatErrorEventArgs e)
-        {
+        protected virtual void OnError(ChatErrorEventArgs e) => 
             Error?.Invoke(this, e);
-        }
 
-        protected virtual void OnClose(EventArgs e)
-        {
+        protected virtual void OnClose(EventArgs e) =>
             Close?.Invoke(this, e);
-        }
 
-        protected virtual void OnConnected(EventArgs e)
-        {
+        protected virtual void OnConnected(EventArgs e) =>
             Connected?.Invoke(this, e);
-        }
 
-        protected virtual void OnMessage(ChatMessageEventArgs e)
-        {
+        protected virtual void OnMessage(ChatMessageEventArgs e) =>
             Message?.Invoke(this, e);
-        }
     }
 }

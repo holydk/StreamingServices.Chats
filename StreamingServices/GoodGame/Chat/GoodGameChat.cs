@@ -1,6 +1,7 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using StreamingServices.GoodGame.Chat.Models;
+using StreamingServices.GoodGame.Models;
 using StreamingServices.Helpers;
 using StreamingServices.Models;
 using System.Dynamic;
@@ -25,12 +26,18 @@ namespace StreamingServices.GoodGame.Chat
 
         #endregion
 
-        public GoodGameChat(string url)
-            : base(url)
+        public GoodGameChat(string uriString)
+            : base(uriString)
         { }
 
-        public GoodGameChat(string url, int userId, string token)
-            : base(url)
+        /// <summary>
+        /// Creates an instance of the StreamingServices.GoodGame.Chat.GoodGameChat
+        /// </summary>
+        /// <param name="uriString">Uri string in format: wss://{...}</param>
+        /// <param name="userId">User id</param>
+        /// <param name="token">Token</param>
+        public GoodGameChat(string uriString, int userId, string token)
+            : base(uriString)
         {
             _userId = userId;
             _token = token;

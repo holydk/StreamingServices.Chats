@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace StreamingServices.Models
@@ -11,18 +11,18 @@ namespace StreamingServices.Models
         where TCommandType : struct, IConvertible
     {
         /// <summary>
-        /// Adress of Web Service 
+        /// Uri of Web Service 
         /// </summary>
-        protected string _uriString;
+        protected readonly Uri _uri;
 
         /// <summary>
         /// API of Web Service 
         /// </summary>
         private Dictionary<TCommandType, dynamic> _commands;
 
-        public ClientWebService(string uri)
+        public ClientWebService(string uriString)
         {
-            _uriString = uri;
+            _uri = new Uri(uriString);
             _commands = new Dictionary<TCommandType, dynamic>();
         }
 
