@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Dynamic;
 using System.Linq;
@@ -17,12 +17,17 @@ namespace StreamingServices.Twitch.Chat
             "[^ ]+) )?(?:(?<Command>[^ :]+) ?)(?:(?<Middle>[^ :]+) ?)*(?::(?<Trailing>.+)?)?",
             RegexOptions.Multiline);
 
-        public TwitchChat(string url, string userName, string token)
-            : base(url)
+        /// <summary>
+        /// Creates an instance of the StreamingServices.Twitch.Chat.TwitchChat
+        /// </summary>
+        /// <param name="uriString">Uri string in format: wss://{...}</param>
+        /// <param name="userName">User name</param>
+        /// <param name="token">Token</param>
+        public TwitchChat(string uriString, string userName, string token)
+            : base(uriString)
         {
             _userName = userName;
             _token = token;
-            _defaultPingDelay = 1000 * 60;
         }
 
         public async override Task AuthAsync()
@@ -177,7 +182,7 @@ namespace StreamingServices.Twitch.Chat
 
         protected override void OnReceived(byte[] data)
         {
-            var ircMsg = Encoding.UTF8.GetString(data);
+            var ircMsg = Encoding.UTF8.GetString(data);         
 
             foreach (Match match in _ircMsgRegex.Matches(ircMsg))
             {
