@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Net.WebSockets;
 using System.Threading;
@@ -63,7 +63,7 @@ namespace StreamingServices.Models
         /// Connect to web service
         /// </summary>
         /// <returns></returns>
-        public async Task ConnectAsync()
+        public async override Task ConnectAsync()
         {
             if (_disposed)
                 throw new ObjectDisposedException(
@@ -79,7 +79,7 @@ namespace StreamingServices.Models
             try
             {
                 await _client.ConnectAsync(
-                        new Uri(_uriString),
+                        _uri,
                         CancellationToken.None)
                         .ConfigureAwait(false);
             }
@@ -100,9 +100,9 @@ namespace StreamingServices.Models
                 return;
             }
 
-            OnConnected(EventArgs.Empty);
-
             StartReceiving();
+
+            OnConnected(EventArgs.Empty);
 
             _pingTimer = new Timer(Ping, null, 0, _defaultPingDelay);
         }
@@ -111,7 +111,7 @@ namespace StreamingServices.Models
         {
             await _client.CloseAsync(
                 WebSocketCloseStatus.NormalClosure,
-                "Connection was closed by user.",
+                "Connection was closed by client.",
                 CancellationToken.None)
                 .ConfigureAwait(false);
 
@@ -277,7 +277,6 @@ namespace StreamingServices.Models
                 _reconnectionSemph.Dispose();
                 _pingTimer.Dispose();
                 _pingTimer = null;
-                _uriString = null;
             }
 
             _disposed = true;
