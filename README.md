@@ -10,3 +10,7 @@ Library for interaction with the Api of streaming services.
 # Getting Started
 
 * Checkout the [Super Quick Start](https://github.com/holydk/Streaming-Services/wiki/Super-Quick-Start)
+
+# Dependencies
+
+* [Newtonsoft.Json](https://github.com/JamesNK/Newtonsoft.Json)
