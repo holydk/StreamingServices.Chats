@@ -170,7 +170,6 @@ namespace StreamingServices.Chats.GoodGame.Chat
         private void HandleSuccessAuth(string json)
         {
             var authModel = Deserialize<ResGGChatAuth>(json);
-
             if (authModel == null)
                 return;
 
@@ -181,7 +180,6 @@ namespace StreamingServices.Chats.GoodGame.Chat
         private void HandleSuccessJoin(string json)
         {
             var joinModel = Deserialize<ResGGChatJoin>(json);
-
             if (joinModel == null)
                 return;
 
@@ -191,12 +189,10 @@ namespace StreamingServices.Chats.GoodGame.Chat
         private void HandleSuccessUnJoin(string json)
         {
             var unJoinModel = Deserialize<ResGGChatUnJoin>(json);
-
             if (unJoinModel == null)
                 return;
 
             var channel = Channels.FirstOrDefault(c => c.Id == unJoinModel.ChannelId);
-
             if (channel != null)
                 RemoveChannel(channel);
         }
@@ -204,14 +200,24 @@ namespace StreamingServices.Chats.GoodGame.Chat
         private void HandleMessage(string json)
         {
             var msgModel = Deserialize<ResGGSendMessage>(json);
-
             if (msgModel == null)
                 return;
 
-            OnMessage(new ChatMessageEventArgs(
-                msgModel.Text,
-                msgModel.UserName,
-                GetUserColorByName(msgModel.Color)));
+            var channel = Channels.FirstOrDefault(c => c.Id == msgModel.ChannelId);
+            if (channel == null)
+            {
+                OnError(new ChatErrorEventArgs(
+                    $"The response from unknown channel with Id - {msgModel.ChannelId}.",
+                    ChatError.NotFoundChannel));
+            }
+            else
+            {
+                OnMessage(new ChatMessageEventArgs(
+                    msgModel.Text,
+                    msgModel.UserName,
+                    GetUserColorByName(msgModel.Color),
+                    channel));
+            }
         }
 
         private void HandlePing(string json)
