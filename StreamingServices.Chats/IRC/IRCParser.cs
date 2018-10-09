@@ -11,8 +11,8 @@ namespace StreamingServices.Chats.IRC
     {
         #region Private Fields
 
-        private Regex _ircMsgRegex = new Regex(@"^(?:@(?<Tags>[^ ]+) )?(?::(?<Prefix>" +
-            @"[^ ]+) )?(?:(?<Command>[^ :]+) ?)(?<Middle>((?!:)\S+ ?)*)?(?: :(?<Trailing>.+))?$",
+        private Regex _ircMsgRegex = new Regex(@"^(?:@(?<Tags>[^ \r\n]+) )?(?::(?<Prefix>" +
+            @"[^ \r\n]+) )?(?:(?<Command>[^ \r\n:]+) ?)(?<Middle>((?!:)\S+ ?)*)?(?: :(?<Trailing>[^\r\n]+))?\r?\n?$",
             RegexOptions.Multiline);
         // ^(?i)(?!:)\w+
         // (^(?!:))?
@@ -77,6 +77,8 @@ namespace StreamingServices.Chats.IRC
 
             if (!string.IsNullOrWhiteSpace(msg.Trailing))
                 ircBuilder.Append($" :{msg.Trailing}");
+
+            ircBuilder.Append("\r\n");
 
             return ircBuilder.ToString();
         } 
@@ -146,7 +148,7 @@ namespace StreamingServices.Chats.IRC
             if (string.IsNullOrWhiteSpace(partValue))
                 return null;
 
-            return partValue.TrimEnd(new[] { '\r', '\n' });
+            return partValue;//.TrimEnd(new[] { '\r', '\n' });
         }
     }
 }
