@@ -21,11 +21,11 @@ namespace StreamingServices.Chats.IRC
         #region Constructors
 
         public IRCMessage(
-            Dictionary<string, string> tags, 
-            string prefix, 
-            string command, 
-            string[] middle,
-            string trailing)
+            string command,
+            Dictionary<string, string> tags = null, 
+            string prefix = null,
+            string[] middle = null,
+            string trailing = null)
         {
             Tags = tags;
             Prefix = prefix;

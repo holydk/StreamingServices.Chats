@@ -40,9 +40,9 @@ namespace StreamingServices.Chats.IRC
                 if (!match.Success) continue;
 
                 messages.Add(new IRCMessage(
+                    GetIRCPartByName(match, Command), 
                     GetTags(match),
                     GetIRCPartByName(match, Prefix),
-                    GetIRCPartByName(match, Command),
                     GetMiddle(match),
                     GetIRCPartByName(match, Trailing)));
             }

@@ -19,10 +19,10 @@ namespace StreamingServices.Test.IRC
         public void Serialize_Test_msg0()
         {
             var parser = new IRCParser();
-            var msg = new IRCMessage(new Dictionary<string, string>()
+            var msg = new IRCMessage("FOO", new Dictionary<string, string>()
             {
                 { "test", "super" }, { "single", "0" }
-            }, "test!me@test.ing", "FOO", null, "This is a test");
+            }, "test!me@test.ing", null, "This is a test");
 
             var message = parser.Serialize(msg);
 
@@ -73,7 +73,7 @@ namespace StreamingServices.Test.IRC
         public void Serialize_Test_msg2()
         {
             var parser = new IRCParser();
-            var msg = new IRCMessage(null, "test!me@test.ing", "FOO", null, null);
+            var msg = new IRCMessage("FOO", null, "test!me@test.ing", null, null);
 
             var message = parser.Serialize(msg);
 
@@ -98,10 +98,10 @@ namespace StreamingServices.Test.IRC
         public void Serialize_Test_msg3()
         {
             var parser = new IRCParser();
-            var msg = new IRCMessage(new Dictionary<string, string>()
+            var msg = new IRCMessage("FOO", new Dictionary<string, string>()
             {
                 { "test", "super" }, { "single", "0" }
-            }, null, "FOO", null, null);
+            }, null, null, null);
 
             var message = parser.Serialize(msg);
 
