@@ -1,8 +1,6 @@
-﻿using StreamingServices.Chats.Abstractions;
-
-namespace StreamingServices.Chats.Models
+﻿namespace StreamingServices.Chats.Models
 {
-    public class Channel : IChannel
+    public class Channel
     {
         public int? Id => _id;
         private int? _id;
@@ -31,6 +29,11 @@ namespace StreamingServices.Chats.Models
         public override int GetHashCode()
         {
             return _id.GetHashCode() + _name.GetHashCode();
+        }
+
+        public override string ToString()
+        {
+            return $"{{Id: {(Id.HasValue ? Id.ToString() : "")}, Name: {Name}}}";
         }
     }
 }

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Drawing;
 
 namespace StreamingServices.Chats.Models
 {
@@ -7,9 +6,9 @@ namespace StreamingServices.Chats.Models
     {
         public string Text { get; }
         public string UserName { get; }
-        public Color UserColor { get; }
+        public string UserColor { get; }
 
-        public ChatMessageEventArgs(string text, string userName, Color userColor)
+        public ChatMessageEventArgs(string text, string userName, string userColor)
         {
             Text = text;
             UserName = userName;

@@ -1,5 +1,6 @@
 using StreamingServices.Chats.Models;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace StreamingServices.Chats.Abstractions
@@ -8,13 +9,11 @@ namespace StreamingServices.Chats.Abstractions
     {
         bool IsConnected { get; }
 
-        bool IsJoined { get; }
-
         bool IsAuthorized { get; }
 
         string UserName { get; }
 
-        IChannel Channel { get; }
+        IReadOnlyCollection<Channel> Channels { get; }
 
         event EventHandler<ChatErrorEventArgs> Error;
 
@@ -28,10 +27,12 @@ namespace StreamingServices.Chats.Abstractions
 
         Task CloseAsync();
 
-        Task JoinChannel(IChannel channel);
+        Task JoinChannel(Channel channel);
 
-        Task UnJoinChannel(IChannel channel);
+        Task UnJoinChannel(Channel channel);
 
         Task SendMessageAsync(string text);
+
+        Task SendMessageAsync(string text, Channel channel);
     }
 }

@@ -3,9 +3,8 @@ using StreamingServices.Chats.WebSockets;
 using StreamingServices.Utils.Abstractions;
 using StreamingServices.Utils.Logging;
 using System;
-using System.Net.WebSockets;
-using System.Text;
-using System.Threading;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace StreamingServices.Chats.Models
@@ -23,19 +22,22 @@ namespace StreamingServices.Chats.Models
 
         private IChatCredential _credential;
 
+        private HashSet<Channel> _channels;
+
         #endregion
 
         #region Public Properties
 
         public abstract bool IsConnected { get; }
 
-        public bool IsJoined { get; protected set; }
-
         public bool IsAuthorized { get; protected set; }
 
         public string UserName { get; protected set; }
 
-        public IChannel Channel { get; protected set; }
+        public IReadOnlyCollection<Channel> Channels
+        {
+            get => _channels.ToList().AsReadOnly();
+        }
 
         #endregion
 
@@ -53,9 +55,10 @@ namespace StreamingServices.Chats.Models
 
         #region Constructors
 
-        public Chat(ILogFactory logger = null)
+        protected Chat(ILogFactory logger = null)
         {
             _logger = logger;
+            _channels = new HashSet<Channel>(new ChannelEqualityComparer());
         }
 
         #endregion
@@ -64,41 +67,138 @@ namespace StreamingServices.Chats.Models
         {
             CheckDisposing();
 
+            if (IsConnected)
+                return Task.CompletedTask;
+
             _credential = credential;
 
             return ConnectAsync(uri);
         }
 
-        public virtual Task CloseAsync()
+        public Task CloseAsync()
         {
             CheckDisposing();
 
-            Channel = null;
+            if (!IsConnected)
+                return Task.CompletedTask;
+
+            _channels.Clear();
+            _channels = null;
             UserName = null;
             IsAuthorized = false;
-            _credential = null;
 
-            return Task.CompletedTask;
+            return InternalCloseAsync();
         }
 
-        protected abstract Task SendAsync(string msg);
+        protected Task SendAsync(string msg)
+        {
+            CheckDisposing();
+
+            if (string.IsNullOrWhiteSpace(msg))
+                return Task.CompletedTask;
+
+            return InternalSendAsync(msg);
+        }
+
+        public async Task SendMessageAsync(string text, Channel channel)
+        {
+            if (string.IsNullOrWhiteSpace(text) || !IsAuthenticated())
+                return;
+
+            if (channel == null)
+                throw new ArgumentNullException(nameof(channel));
+
+            if (!_channels.Contains(channel))
+            {
+                OnError(new ChatErrorEventArgs(
+                    $"Error on send message: Channel - {channel} not found.", 
+                    ChatError.NotFoundChannel));
+            }
+            else
+            {
+                await InternalSendMessageAsync(text, channel);
+            }
+        }
+
+        public async Task SendMessageAsync(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text) || !IsAuthenticated())
+                return;            
+
+            if (!_channels.Any())
+            {
+                OnError(new ChatErrorEventArgs(
+                    "Error on send message: Channels list is empty.",
+                    ChatError.EmptyChannelsList));
+            }
+            else
+            {
+                foreach (var channel in _channels)
+                {
+                    await InternalSendMessageAsync(text, channel);
+                }
+            }
+        }
+
+        public async Task JoinChannel(Channel channel)
+        {
+            if (channel == null)            
+                throw new ArgumentNullException(nameof(channel));
+
+            if (!IsAuthenticated())
+                return;
+
+            if (_channels.Contains(channel))
+            {
+                OnError(new ChatErrorEventArgs(
+                    $"The attempt to connect to the same channel - {channel} in chat.",
+                    ChatError.ConnectionToSameChannel));
+            }
+            else
+            {
+                await InternalJoinChannel(channel);
+            }
+        }
+
+        public async Task UnJoinChannel(Channel channel)
+        {
+            if (channel == null)
+                throw new ArgumentNullException(nameof(channel));
+
+            if (!IsAuthenticated())
+                return;
+
+            if (!_channels.Contains(channel))
+            {
+                OnError(new ChatErrorEventArgs(
+                    $"The attempt to unjoin not added channel - {channel}.",
+                    ChatError.NotFoundChannel));
+            }
+            else
+            {
+                await InternalUnJoinChannel(channel);
+            }
+        }
 
         protected abstract Task ConnectAsync(Uri uri);
 
         protected abstract Task AuthorizeAsync(IChatCredential credential);
 
-        protected abstract Task PingAsync();
+        protected abstract Task InternalCloseAsync();
 
-        protected abstract Task PongAsync();
+        protected abstract Task InternalSendAsync(string msg);
 
-        public abstract Task SendMessageAsync(string text);
+        protected abstract Task InternalSendMessageAsync(string text, Channel channel);
 
-        public abstract Task JoinChannel(IChannel channel);
+        protected abstract Task InternalJoinChannel(Channel channel);
 
-        public abstract Task UnJoinChannel(IChannel channel);
+        protected abstract Task InternalUnJoinChannel(Channel channel);
 
         protected virtual void OnError(ChatErrorEventArgs e)
         {
+            if (e.ErrorCode == ChatError.InvalidConnection)           
+                IsAuthorized = false;                   
+
             Error?.Invoke(this, e);
         }
             
@@ -109,12 +209,21 @@ namespace StreamingServices.Chats.Models
 
         protected virtual void OnConnected(EventArgs e)
         {
-            IsJoined = false;
-            IsAuthorized = false;
-
             Task.Factory.StartNew(async () =>
             {
                 await AuthorizeAsync(_credential).ConfigureAwait(false);
+                
+                if (_channels.Any())
+                {
+                    // Waiting for response from server
+                    // with authorization data
+                    await Task.Delay(2000);
+
+                    foreach (var channel in _channels)
+                    {
+                        await InternalJoinChannel(channel);
+                    }
+                }
             }, TaskCreationOptions.RunContinuationsAsynchronously);
             
             Connected?.Invoke(this, e);
@@ -129,10 +238,47 @@ namespace StreamingServices.Chats.Models
         {
             _logger?.Log(msg, LogLevel.Error);
 
-            if (type.HasValue)
+            if (type.HasValue)            
+                OnError(new ChatErrorEventArgs(msg, type.Value));            
+        }
+
+        protected void AddChannel(Channel channel)
+        {
+            if (channel == null)
+                throw new ArgumentNullException(nameof(channel));
+
+            _channels.Add(channel);
+        }
+
+        protected void RemoveChannel(Channel channel)
+        {
+            if (channel == null)
+                throw new ArgumentNullException(nameof(channel));
+
+            _channels.Remove(channel);
+        }
+
+        protected bool IsAuthenticated()
+        {
+            if (!IsConnected)
             {
-                OnError(new ChatErrorEventArgs(msg, type.Value));
+                OnError(new ChatErrorEventArgs(
+                    "You not connected to chat.",
+                    ChatError.InvalidConnection));
+
+                return false;
             }
+
+            if (!IsAuthorized)
+            {
+                OnError(new ChatErrorEventArgs(
+                    "You not authorized in chat.",
+                    ChatError.NotAuthorized));
+
+                return false;
+            }
+
+            return true;
         }
 
         #region IDisposable Support
@@ -160,7 +306,8 @@ namespace StreamingServices.Chats.Models
         protected virtual void DisposeManagementResources()
         {
             _logger = null;
-            Channel = null;
+            _channels.Clear();
+            _channels = null;
             UserName = null;
             IsAuthorized = false;
             _credential = null;
@@ -184,145 +331,5 @@ namespace StreamingServices.Chats.Models
         }
 
         #endregion
-    }
-
-    public abstract class WebSocketChat : Chat
-    {
-        #region Private Fields
-
-        private IWebSocketClient _client;
-
-        private Timer _pingTimer;
-
-        private int _defaultPingDelay = 10000;
-
-        #endregion
-
-        #region Public Properties
-
-        public override bool IsConnected => _client.IsConnected;
-
-        #endregion
-
-        #region Constructors
-
-        public WebSocketChat(IWebSocketClient client, ILogFactory logger = null)
-            : base(logger)
-        {
-            _client = client;
-            _client.Connected += OnConnected;
-            _client.Close += OnClose;
-            _client.Error += OnError;
-            _client.Message += OnMessage;
-        }
-
-        #endregion
-
-        protected abstract void OnMessage(string msg);
-
-        protected abstract void OnMessage(byte[] data);
-
-        protected override Task ConnectAsync(Uri uri)
-        {
-            return _client.ConnectAsync(uri);
-        }
-
-        public async override Task CloseAsync()
-        {
-            await base.CloseAsync().ConfigureAwait(false);
-
-            if (!IsConnected)
-                return;
-
-            await _client.CloseAsync().ConfigureAwait(false);
-        }
-
-        private void OnConnected(object client, EventArgs e)
-        {
-            //_pingTimer?.Dispose();
-            // TODO: Исключения в сокете из за потоков
-            if (_pingTimer == null)
-                _pingTimer = new Timer(Ping, null, 0, _defaultPingDelay);
-
-            OnConnected(e);
-        }
-
-        private void OnClose(object client, WebSocketCloseEventArgs e)
-        {
-            OnClose(EventArgs.Empty);
-        }
-
-        private void OnError(object client, WebSocketErrorEventArgs e)
-        {
-            if (!_client.IsConnected)
-            {
-                _pingTimer?.Dispose();
-                _pingTimer = null;
-
-                // Try to make reconnection 
-                Task.Factory.StartNew(async () =>
-                {
-                    await _client.ReconnectAsync().ConfigureAwait(false);
-                }, TaskCreationOptions.RunContinuationsAsynchronously);
-
-                LogError(e.Message, ChatError.InvalidConnection);
-            }
-        }
-
-        private void OnMessage(object client, WebSocketResponseEventArgs e)
-        {
-            switch (e.MessageType)
-            {
-                case WebSocketMessageType.Binary:
-
-                    OnMessage(e.Data);
-
-                    break;
-                case WebSocketMessageType.Text:
-
-                    OnMessage(Encoding.UTF8.GetString(e.Data));
-
-                    break;
-
-                default: break;
-            }
-        }
-
-        protected override void DisposeManagementResources()
-        {
-            base.DisposeManagementResources();
-
-            _client.Connected -= OnConnected;
-            _client.Close -= OnClose;
-            _client.Error -= OnError;
-            _client.Message -= OnMessage;
-            _client.Dispose();
-            _client = null;
-
-            _pingTimer?.Dispose();
-            _pingTimer = null;
-        }
-
-        protected async override Task SendAsync(string msg)
-        {
-            CheckDisposing();
-
-            if (string.IsNullOrWhiteSpace(msg))
-                return;
-
-            var data = Encoding.UTF8.GetBytes(msg);
-
-            await _client
-                .SendAsync(new ArraySegment<byte>(data), WebSocketMessageType.Text)
-                .ConfigureAwait(false);
-        }
-
-        private void Ping(object state)
-        {
-            Task.Factory.StartNew(async () =>
-            {
-                await PingAsync().ConfigureAwait(false);
-            }, TaskCreationOptions.RunContinuationsAsynchronously);
-        }
     }
 }

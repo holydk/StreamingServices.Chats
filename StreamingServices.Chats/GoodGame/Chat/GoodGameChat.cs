@@ -6,7 +6,7 @@ using StreamingServices.GoodGame.Chat.Models;
 using StreamingServices.GoodGame.Models;
 using StreamingServices.Utils.Abstractions;
 using System;
-using System.Drawing;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -52,51 +52,16 @@ namespace StreamingServices.Chats.GoodGame.Chat
                 }
                 else
                 {
-                    var msg = "Invalid conversion IChatCredential.User as int.";
-
-                    LogError(msg);
-
-                    throw new InvalidOperationException(msg);
+                    throw new InvalidOperationException(
+                        "Invalid conversion IChatCredential.User to int.");
                 }
             }
 
             return SendModelAsync(model);
         }
 
-        public async override Task JoinChannel(IChannel channel)
+        protected async override Task InternalJoinChannel(Channel channel)
         {
-            if (channel == null)
-            {
-                throw new ArgumentNullException(nameof(channel));
-            }
-
-            if (!IsConnected)
-            {
-                OnError(new ChatErrorEventArgs(
-                    "You not connected to chat.",
-                    ChatError.InvalidConnection));
-
-                return;
-            }
-
-            if (!IsAuthorized)
-            {
-                OnError(new ChatErrorEventArgs(
-                    "You not authorized in chat.",
-                    ChatError.NotAuthorized));
-
-                return;
-            }
-
-            if (Channel != null && Channel.Equals(channel))
-            {
-                OnError(new ChatErrorEventArgs(
-                    "You connected to the same channel in chat.",
-                    ChatError.ConnectionToSameChannel));
-
-                return;
-            }
-
             if (channel.Id.HasValue)
             {
                 var model = new GGMessage<ReqGGChatJoin>
@@ -109,108 +74,37 @@ namespace StreamingServices.Chats.GoodGame.Chat
                     }
                 };
 
-                Channel = channel;
-
                 await SendModelAsync(model).ConfigureAwait(false);
             }
             else
             {
-                var msg = "ChannelId is null.";
-
-                LogError(msg);
-
-                throw new InvalidOperationException(msg);
+                throw new InvalidOperationException("ChannelId is null.");
             }
         }
 
-        public async override Task UnJoinChannel(IChannel channel)
+        protected override Task InternalUnJoinChannel(Channel channel)
         {
-            if (!IsJoined)
+            var model = new GGMessage<ResGGChatUnJoin>
             {
-                OnError(new ChatErrorEventArgs(
-                    "You not joined to channel.",
-                    ChatError.NotJoinedToChannel));
-
-                return;
-            }
-
-            if (channel == null)
-            {
-                throw new ArgumentNullException(nameof(channel));
-            }
-
-            if (!IsConnected)
-            {
-                OnError(new ChatErrorEventArgs(
-                    "You not connected to chat.",
-                    ChatError.InvalidConnection));
-
-                return;
-            }
-
-            if (!IsAuthorized)
-            {
-                OnError(new ChatErrorEventArgs(
-                    "You not authorized in chat.",
-                    ChatError.NotAuthorized));
-
-                return;
-            }
-
-            if (Channel.Equals(channel))
-            {
-                var model = new GGMessage<GGUnJoin>
+                Type = "unjoin",
+                Data =
                 {
-                    Type = "unjoin",
-                    Data =
-                    {
-                        ChannelId = channel.Id.Value
-                    }
-                };
+                    ChannelId = channel.Id.Value
+                }
+            };
 
-                await SendModelAsync(model).ConfigureAwait(false);
-            }
+            return SendModelAsync(model);
         }
 
-        public async override Task SendMessageAsync(string text)
+        protected override Task InternalSendMessageAsync(string text, Channel channel)
         {
-            if (string.IsNullOrWhiteSpace(text))
-                return;
-
-            if (!IsConnected)
-            {
-                OnError(new ChatErrorEventArgs(
-                    "You not connected to chat.",
-                    ChatError.InvalidConnection));
-
-                return;
-            }
-
-            if (!IsAuthorized)
-            {
-                OnError(new ChatErrorEventArgs(
-                    "You not authorized in chat.",
-                    ChatError.NotAuthorized));
-
-                return;
-            }
-
-            if (!IsJoined)
-            {
-                OnError(new ChatErrorEventArgs(
-                    "You not joined to channel.",
-                    ChatError.NotJoinedToChannel));
-
-                return;
-            }
-
             // TODO : add IChatOptions
             var model = new GGMessage<ReqGGSendMessage>()
             {
                 Type = "send_message",
                 Data =
                 {
-                    ChannelId = Channel.Id.Value,
+                    ChannelId = channel.Id.Value,
                     Mobile = 0,
                     Text = text
                     // icon = ???
@@ -219,7 +113,7 @@ namespace StreamingServices.Chats.GoodGame.Chat
                 }
             };
 
-            await SendModelAsync(model).ConfigureAwait(false);
+            return SendModelAsync(model);
         }
 
         private Task SendModelAsync(object model)
@@ -236,58 +130,31 @@ namespace StreamingServices.Chats.GoodGame.Chat
             {
                 case "success_auth":
 
-                    var authModel = _parser
-                        .Deserialize<GGMessage<ResGGChatAuth>>(msg);
-
-                    if (authModel == null)
-                        return;
-
-                    UserName = authModel.Data.UserName;
-                    IsAuthorized = true;
+                    HandleSuccessAuth(msg);
 
                     break;
 
                 case "success_join":
 
-                    var joinModel = _parser
-                        .Deserialize<GGMessage<ResGGChatJoin>>(msg);
-
-                    if (joinModel == null ||
-                        Channel == null ||
-                        !Channel.Id.HasValue)
-                        return;
-
-                    if (joinModel.Data.ChannelId == Channel.Id)
-                        IsJoined = true;
+                    HandleSuccessJoin(msg);
 
                     break;
 
                 case "success_unjoin":
 
+                    HandleSuccessUnJoin(msg);
+
                     break;
 
                 case "message":
 
-                    var msgModel = _parser
-                        .Deserialize<GGMessage<ResGGSendMessage>>(msg);
-
-                    if (msgModel == null)
-                        return;
-
-                    OnMessage(new ChatMessageEventArgs(
-                        msgModel.Data.Text, 
-                        msgModel.Data.UserName, 
-                        // TODO: Update color
-                        Color.AliceBlue));
+                    HandleMessage(msg);
 
                     break;
 
                 case "ping":
 
-                    Task.Factory.StartNew(async () =>
-                    {
-                        await PongAsync().ConfigureAwait(false);
-                    }, TaskCreationOptions.RunContinuationsAsynchronously);
+                    HandlePing(msg);
 
                     break;
 
@@ -298,6 +165,61 @@ namespace StreamingServices.Chats.GoodGame.Chat
         protected override void OnMessage(byte[] data)
         {
             
+        }
+
+        private void HandleSuccessAuth(string json)
+        {
+            var authModel = Deserialize<ResGGChatAuth>(json);
+
+            if (authModel == null)
+                return;
+
+            UserName = authModel.UserName;
+            IsAuthorized = true;
+        }
+
+        private void HandleSuccessJoin(string json)
+        {
+            var joinModel = Deserialize<ResGGChatJoin>(json);
+
+            if (joinModel == null)
+                return;
+
+            AddChannel(new Channel(joinModel.ChannelId, joinModel.ChannelName));
+        }
+
+        private void HandleSuccessUnJoin(string json)
+        {
+            var unJoinModel = Deserialize<ResGGChatUnJoin>(json);
+
+            if (unJoinModel == null)
+                return;
+
+            var channel = Channels.FirstOrDefault(c => c.Id == unJoinModel.ChannelId);
+
+            if (channel != null)
+                RemoveChannel(channel);
+        }
+
+        private void HandleMessage(string json)
+        {
+            var msgModel = Deserialize<ResGGSendMessage>(json);
+
+            if (msgModel == null)
+                return;
+
+            OnMessage(new ChatMessageEventArgs(
+                msgModel.Text,
+                msgModel.UserName,
+                GetUserColorByName(msgModel.Color)));
+        }
+
+        private void HandlePing(string json)
+        {
+            Task.Factory.StartNew(async () =>
+            {
+                await PongAsync().ConfigureAwait(false);
+            }, TaskCreationOptions.RunContinuationsAsynchronously);
         }
 
         protected override Task PingAsync()
@@ -322,6 +244,29 @@ namespace StreamingServices.Chats.GoodGame.Chat
                 return null;
 
             return _msgTypeRegex.Match(json).Groups["Type"].Value;
+        }
+
+        private T Deserialize<T>(string json)
+            where T : class, new()
+        {
+            return _parser.Deserialize<GGMessage<T>>(json)?.Data;
+        }
+
+        private string GetUserColorByName(string name)
+        {
+            switch (name)
+            {
+                case "bronze": return "#e7820a";
+                case "silver": return "#b4b4b4";
+                case "gold": return "#eefc08";
+                case "diamond": return "#8781bd";
+                case "king": return "#30d5c8";
+                case "top-one": return "#3BCBFF";
+                case "streamer": return "#e8bb00";
+                case "moderator": return "#ec4058";
+                case "premium-personal": return "#31a93a";
+                default: return "#73adff";
+            }
         }
     }
 }

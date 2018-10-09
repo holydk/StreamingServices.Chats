@@ -11,6 +11,10 @@
         /// <summary>
         /// Connection to the same channel
         /// </summary>
-        ConnectionToSameChannel
+        ConnectionToSameChannel,
+
+        EmptyChannelsList,
+
+        NotFoundChannel
     }
 }
