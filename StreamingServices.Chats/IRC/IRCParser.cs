@@ -14,10 +14,7 @@ namespace StreamingServices.Chats.IRC
         private Regex _ircMsgRegex = new Regex(@"^(?:@(?<Tags>[^ \r\n]+) )?(?::(?<Prefix>" +
             @"[^ \r\n]+) )?(?:(?<Command>[^ \r\n:]+) ?)(?<Middle>((?!:)\S+ ?)*)?(?: :(?<Trailing>[^\r\n]+))?\r?\n?$",
             RegexOptions.Multiline);
-        // ^(?i)(?!:)\w+
-        // (^(?!:))?
-        // (?<!^:)
-        // (?<!:)
+
         private const string Tags = "Tags";
         private const string Prefix = "Prefix";
         private const string Command = "Command";
@@ -109,12 +106,15 @@ namespace StreamingServices.Chats.IRC
             if (string.IsNullOrWhiteSpace(tagsPart))
                 return null;
 
-            var tagsAsString = GetIRCPartByName(match, Tags).Split(';');
+            var tagsArray = tagsPart.Split(';');
             var tags = new Dictionary<string, string>();
+            string[] _tag;
 
-            foreach (var tag in tagsAsString)
+            foreach (var tag in tagsArray)
             {
-                tags.Add(tag.Split('=')[0], tag.Split('=')[1]);
+                _tag = tag.Split('=');
+
+                tags.Add(_tag[0], _tag[1]);
             }
 
             return tags;
@@ -148,7 +148,7 @@ namespace StreamingServices.Chats.IRC
             if (string.IsNullOrWhiteSpace(partValue))
                 return null;
 
-            return partValue;//.TrimEnd(new[] { '\r', '\n' });
+            return partValue;
         }
     }
 }
