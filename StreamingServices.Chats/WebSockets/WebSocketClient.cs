@@ -124,11 +124,7 @@ namespace StreamingServices.Chats.WebSockets
             try
             {
                 await _client
-                    .SendAsync(
-                        buffer,
-                        WebSocketMessageType.Text,
-                        true,
-                        _cancelTokenSource.Token)
+                    .SendAsync(buffer, messageType, true, _cancelTokenSource.Token)
                     .ConfigureAwait(false);
             }
             catch
